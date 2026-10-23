@@ -1,0 +1,5 @@
+Experiment,Variant,PR-AUC,ROC-AUC,Brier
+Knowledge signals alone,Rule-only,0.1294,0.7517,0.0417
+Knowledge-feature ablation,XGBoost without rules,0.0915,0.7107,0.0402
+Full system,XGBoost with rules,0.0871,0.7008,0.0404
+Incremental gain (full - ablated),Delta,-0.0044,-0.0099,0.0002
