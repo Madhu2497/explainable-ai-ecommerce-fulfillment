@@ -66,3 +66,47 @@ This repository is **not submission-ready**. Do not claim a novel superior hybri
 ### Attribution
 
 Olist Brazilian E-Commerce Public Dataset: https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce. Cite and comply with the dataset's listed license and attribution requirements. Dataset files intentionally not committed.
+
+
+## Step 4 — Knowledge-constrained decision experiment (exploratory, 23 October 2026)
+
+The `--rolling` branch above studies *unconstrained feature augmentation*. A separate
+`decision_validation.py` tests a real **knowledge-constrained probability model**:
+
+
+`q = sigmoid(a + b * logit(p_XGB) + w_tight * tight + w_multi * multi_seller + w_heavy * heavy)`,
+
+where `b >= 0` and each knowledge-rule coefficient `w >= 0`. The nonnegative signs are **assumptions** encoding the hypothesis that each rule signals elevated risk, NOT empirically established Olist policies. A nonnegative coefficient can be zero. The coefficients are optimized for validation-only log loss with fixed quadratic regularization (0.02), and the resulting method is compared with raw XGBoost and an otherwise identical calibration without rules. The original model is never refit using a test-month outcome. Alert allocation is evaluated at a fixed top-10% investigation capacity; no treatment/outcome data exist to estimate actual intervention effectiveness.
+
+```bash
+python decision_validation.py --data archive.zip --out results
+```
+
+This writes two **supplementary CSVs**, not extra main-paper figure/table slots:
+`results/decision_validation.csv` (20 model-by-month rows) and
+`results/rule_coverage_audit.csv` (descriptive full-cohort rule counts).
+The code also provides exploratory paired order bootstrap intervals for **Brier-score differences** and **top-10%-alert recall differences** versus raw XGBoost. These intervals do **not** correct for repeated buyers, clustered order behavior, multiple comparisons, or temporal correlation.
+
+### Key held-out findings (March–July 2018)
+
+| Month | Raw XGB PR-AUC | Constrained PR-AUC | Raw Brier | Constrained Brier | Top-10% delayed-order recall, raw / constrained |
+|---|---:|---:|---:|---:|---:|
+| Mar | 0.2517 | 0.2516 | 0.16933 | 0.18634 | 0.1544 / 0.1544 |
+| Apr | 0.1657 | 0.1657 | 0.04106 | 0.04113 | 0.3529 / 0.3529 |
+| May | 0.1298 | 0.1298 | 0.06043 | 0.06414 | 0.1896 / 0.1874 |
+| Jun | 0.1212 | 0.1212 | 0.01148 | 0.01143 | 0.4225 / 0.4225 |
+| Jul | 0.1103 | 0.1103 | 0.03221 | 0.03346 | 0.2644 / 0.2644 |
+
+**Conclusion:** With fixed rule signs and conservative shrinkage, nearly all constrained rule weights shrink to zero, so ranking performance is almost identical to the base model. Calibration is usually worse than the raw predictor. The expert assumptions are therefore **not supported as beneficial by this test**. A knowledge-constrained layer was genuinely implemented, but **no improved prediction or business benefit has been established**. The earlier claims of methodological superiority must not be made.
+
+### Explicit failure analysis
+
+- **Rare high-risk threshold:** 27 of 96,456 (0.028%) eligible orders satisfy the tight-commitment threshold, giving the rule very low coverage.
+- **Contradicted coordination prior:** Multi-seller orders have an observed 1.02% late-delivery rate (1,275 orders), versus 6.85% for other orders. This association is *descriptive* and not a causal effect, but directly cautions against assuming multi-seller coordination always raises delay risk.
+- **Heavy-weight prior:** Parcels with max item weight >10 kg have a 9.52% late-delivery rate versus 6.64% for others, yet the full model generally has insufficient evidence for a large additional strictly nonnegative coefficient after accounting for the other features.
+- **Calibration under changing prevalence:** A preceding-month calibration layer is especially vulnerable when the next month's late-delivery prevalence changes sharply. Raw XGBoost can outperform both global and knowledge-constrained validation calibrators.
+- **Interpretation:** The fixed operational rules were invented as transparent hypotheses, not drawn from documented carrier service-level agreements. We should conduct a documented literature review and seek operational subject-matter knowledge before treating them as hard constraints.
+
+### Manuscript implications
+
+The strongest defensible result is a **negative replication / rule-validity stress test**. Do not submit a paper claiming the algorithm outperforms XGBoost. A KBS submission would require a substantially stronger and demonstrably distinct knowledge-engineering contribution, methodological and external validation, and an updated novelty review. The class assignment's final manuscript should have **exactly two principal figures and two principal experimental tables**; the CSV outputs and rule audit may be supplementary materials.
