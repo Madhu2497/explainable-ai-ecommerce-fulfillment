@@ -1,0 +1,7 @@
+rule,value,orders,fraction_of_cohort,late_rate
+tight_route_commitment,0,96429,0.9997201,0.0676249
+tight_route_commitment,1,27,0.0002799,0.4814815
+multi_seller_coordination,0,95181,0.9867815,0.0685116
+multi_seller_coordination,1,1275,0.0132185,0.0101961
+heavy_package_flag,0,91910,0.9528697,0.0663802
+heavy_package_flag,1,4546,0.0471303,0.0952486
