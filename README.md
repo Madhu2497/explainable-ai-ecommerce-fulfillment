@@ -114,9 +114,9 @@ The strongest defensible result is a **negative replication / rule-validity stre
 
 ## Step 6 — Evidence-gated rule-validity stress test (exploratory)
 
-\`rule_reliability.py\` evaluates whether business-rule residual adjustments should be admitted or discarded **using only preceding-month, outcome-available validation records**. An internal chronological 60/40 validation split estimates signed, regularized rule effects on the earlier part and conditionally activates the overlay only if its Brier score improves on the later part. Rules also require a minimum of 30 firings and 5 outcomes in each class to qualify. No test-month outcome is used for fitting or activation.
+`rule_reliability.py` evaluates whether business-rule residual adjustments should be admitted or discarded **using only preceding-month, outcome-available validation records**. An internal chronological 60/40 validation split estimates signed, regularized rule effects on the earlier part and conditionally activates the overlay only if its Brier score improves on the later part. Rules also require a minimum of 30 firings and 5 outcomes in each class to qualify. No test-month outcome is used for fitting or activation.
 
-Run \`python rule_reliability.py --data archive.zip --out results\`. Supplementary outputs: \`results/rule_reliability.csv\` and \`results/rule_gate_audit.csv\`; see \`STAGE6_AUDIT.md\` for details, data limitations, and a non-advocacy interpretation.
+Run `python rule_reliability.py --data archive.zip --out results`. Supplementary outputs: `results/rule_reliability.csv` and `results/rule_gate_audit.csv`; see `STAGE6_AUDIT.md` for details, data limitations, and a non-advocacy interpretation.
 
 **Observed March–July 2018 result:** the gate disabled rule overlays in 4/5 months; in its only accepted month (May), out-of-time Brier increased from 0.060425 to 0.061294. This is **not an improvement claim**. It strengthens the documented failure/robustness analysis; the proposal remains exploratory and is not ready for journal submission. Main-paper output remains restricted to two figures and two tables; added CSVs are supplementary.
 
