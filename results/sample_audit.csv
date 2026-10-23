@@ -1,0 +1,13 @@
+,value
+cohort,96456
+late_rate,0.06774073152525503
+train,64415
+validation,12537
+test,14469
+train_late_rate,0.06810525498719243
+val_late_rate,0.04283321368748504
+test_late_rate,0.04285023152947681
+validation_start,2018-04-15 20:24:52
+test_start,2018-06-21 08:46:52
+unobserved_geo_rate,0.004934892593514141
+dataset,Olist Brazil e-commerce
