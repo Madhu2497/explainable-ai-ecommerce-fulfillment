@@ -8,6 +8,7 @@ Cohort: completed deliveries only, meaning findings do not generalize to cancell
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 from pathlib import Path
 from zipfile import ZipFile
 import numpy as np
@@ -126,13 +127,99 @@ def best_threshold(y,p):
     return float(thresholds[int(np.argmax(f1s))]) if len(thresholds) else 0.5
 
 
+
+def monthly_robustness(df, output_dir, n_boot=500):
+    """Strictly chronological monthly tests, with outcomes known at fitting time.
+
+    Train: orders purchased before the month preceding test month, and delivered
+    before that preceding month's start (label availability at model fit).
+    Validate: preceding month's orders already delivered by test-month start.
+    Test: test-month orders, labelled after delivery solely for evaluation.
+    No tuning using the test window; all model hyperparameters are fixed.
+    Order-level bootstrap intervals are descriptive (repeated customers possible).
+    """
+    rng = np.random.default_rng(SEED)
+    fold_rows = []
+    months = pd.to_datetime(['2018-03-01','2018-04-01','2018-05-01',
+                             '2018-06-01','2018-07-01'])
+    for cutoff in months:
+        val_begin = cutoff - pd.DateOffset(months=1)
+        test_end = cutoff + pd.DateOffset(months=1)
+        tr = df.loc[(df.order_purchase_timestamp < val_begin) &
+                    (df.order_delivered_customer_date < val_begin)].copy()
+        va = df.loc[(df.order_purchase_timestamp >= val_begin) &
+                    (df.order_purchase_timestamp < cutoff) &
+                    (df.order_delivered_customer_date < cutoff)].copy()
+        te = df.loc[(df.order_purchase_timestamp >= cutoff) &
+                    (df.order_purchase_timestamp < test_end)].copy()
+        assert tr.order_purchase_timestamp.max() < val_begin
+        assert tr.order_delivered_customer_date.max() < val_begin
+        assert va.order_delivered_customer_date.max() < cutoff
+        assert te.order_purchase_timestamp.min() >= cutoff
+        if len(tr) < 1000 or len(va) < 100 or te.late.sum() < 15:
+            raise RuntimeError(f'Insufficient observations for robustness test {cutoff}')
+        ytr, yva, yte = tr.late.to_numpy(),va.late.to_numpy(),te.late.to_numpy()
+        preds={}
+        for model_name, cols, model in [
+            ('Rule-only', RULES,make_pipeline(StandardScaler(),
+                     LogisticRegression(max_iter=1200,random_state=SEED))),
+            ('Logistic', BASE,make_pipeline(StandardScaler(),
+                     LogisticRegression(max_iter=1200,random_state=SEED))),
+            ('XGBoost',BASE,XGBClassifier(n_estimators=260,max_depth=3,
+                     learning_rate=.045,subsample=.85,colsample_bytree=.9,
+                     objective='binary:logistic',eval_metric='logloss',
+                     tree_method='hist',n_jobs=4,random_state=SEED)),
+            ('Knowledge-guided XGBoost',BASE+RULES,XGBClassifier(
+                     n_estimators=260,max_depth=3,learning_rate=.045,
+                     subsample=.85,colsample_bytree=.9,objective='binary:logistic',
+                     eval_metric='logloss',tree_method='hist',n_jobs=4,random_state=SEED)),
+        ]:
+            imp=SimpleImputer(strategy='median')
+            xtr=imp.fit_transform(tr[cols]); xva=imp.transform(va[cols]); xte=imp.transform(te[cols]);
+            model.fit(xtr,ytr)
+            pv=model.predict_proba(xva)[:,1]
+            pt=model.predict_proba(xte)[:,1]
+            threshold=best_threshold(yva,pv)
+            preds[model_name]=pt
+            sc=score(yte,pt,threshold)
+            fold_rows.append(dict(fold=cutoff.strftime('%Y-%m'),model=model_name,
+                    train_n=len(tr),validation_n=len(va),test_n=len(te),
+                    test_positives=int(yte.sum()),test_prevalence=float(yte.mean()),
+                    **sc))
+        # CI around a paired difference in PR-AUC within each heldout month.
+        indices=np.arange(len(yte))
+        for alternative in ['Rule-only','Knowledge-guided XGBoost']:
+            diffs=[]
+            for _ in range(n_boot):
+                ind=rng.choice(indices, size=len(indices),replace=True)
+                yy=yte[ind]
+                if len(np.unique(yy)) != 2:
+                    continue
+                diffs.append(average_precision_score(yy,preds[alternative][ind])-
+                             average_precision_score(yy,preds['XGBoost'][ind]))
+            lower,upper=np.quantile(diffs,[.025,.975])
+            for record in fold_rows[-4:]:
+                if record['model']==alternative:
+                    record['PR-AUC delta vs XGBoost']=average_precision_score(yte,preds[alternative])-average_precision_score(yte,preds['XGBoost'])
+                    record['Paired bootstrap lower']=lower
+                    record['Paired bootstrap upper']=upper
+    out=pd.DataFrame(fold_rows)
+    out.to_csv(output_dir/'rolling_validation.csv',index=False,float_format='%.6f')
+    return out
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data',type=Path,required=True)
     parser.add_argument('--out',type=Path,default=Path('results'))
+    parser.add_argument('--rolling',action='store_true',help='Run five additional chronological monthly validation folds')
     args=parser.parse_args()
     args.out.mkdir(parents=True,exist_ok=True)
     df=load_features(args.data)
+    if args.rolling:
+        folds=monthly_robustness(df,args.out)
+        print("\nAdditional out-of-time validation:\n",folds.pivot(index="fold",columns="model",values="PR-AUC").round(4).to_string())
+        print("\nStored rolling_validation.csv. No additional figures or result tables created.")
+        return
     n=len(df); i_val=int(n*.70); i_test=int(n*.85)
     val_start=df.order_purchase_timestamp.iloc[i_val]
     test_start=df.order_purchase_timestamp.iloc[i_test]
