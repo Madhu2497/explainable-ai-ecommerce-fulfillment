@@ -15,9 +15,11 @@ Can transparent business feasibility rules improve **at-order-approval** predict
 ```bash
 python -m pip install -r requirements.txt
 python experiment.py --data archive.zip --out results
+# Additional strictly chronological monthly holdouts + paired bootstrap intervals:
+python experiment.py --data archive.zip --out results --rolling
 ```
 
-The script generates **exactly two experimental figures** (`results/figure1_precision_recall.png`, `results/figure2_calibration.png`) and **two experimental tables** (`results/table1_model_results.csv`, `results/table2_knowledge_ablation.csv`). `results/sample_audit.csv` records the cohort and temporal splits.
+The script generates **exactly two experimental figures** (`results/figure1_precision_recall.png`, `results/figure2_calibration.png`) and **two experimental tables** (`results/table1_model_results.csv`, `results/table2_knowledge_ablation.csv`). `results/sample_audit.csv` records the cohort and temporal splits. The optional `--rolling` run adds `results/rolling_validation.csv` with five out-of-time monthly evaluations and paired, exploratory order-level bootstrap intervals (500 draws per comparison). It creates no additional main figures or main tables.
 
 ## Design and safeguards
 
@@ -39,11 +41,27 @@ The script generates **exactly two experimental figures** (`results/figure1_prec
 | XGBoost | 0.0915 | 0.7107 | **0.0402** |
 | XGBoost + knowledge rule signals | 0.0871 | 0.7008 | 0.0404 |
 
-**Interpretation:** Knowledge-only rules showed better ranking of rare delays on this test period, but feature-augmented XGBoost did **not** improve over ordinary XGBoost. A single time split does not establish reliable generalization or a novel algorithm. Significant class and time-period shifts exist. No comparisons have yet been subjected to repeated time-block testing, bootstrap confidence intervals, statistical significance tests, or external validation.
+**Interpretation (single test):** Rule-only ranking was higher in this particular period; feature-augmented XGBoost did **not** improve over ordinary XGBoost. The rule-only result does not hold under the additional chronological checks below. No superior hybrid algorithm is demonstrated.
+
+## Five additional forward-chaining tests (March-July 2018)
+
+Each month is evaluated as a new held-out purchasing month. Training includes only orders purchased **and delivered** before the start of the preceding validation month. The immediately preceding month provides a validation set of orders with labels known by the test month. No test-month outcome is used in training, preprocessing or threshold selection. Model settings are held constant across folds.
+
+| Test month | Late-delivery prevalence | Logistic PR-AUC | Rule-only PR-AUC | XGBoost PR-AUC | Rules + XGBoost PR-AUC |
+|---|---:|---:|---:|---:|---:|
+| March 2018 | 18.96% | 0.3102 | 0.1703 | 0.2517 | 0.2476 |
+| April 2018 | 4.50% | 0.1592 | 0.0546 | 0.1657 | 0.1519 |
+| May 2018 | 6.56% | 0.1479 | 0.0840 | 0.1298 | 0.1246 |
+| June 2018 | 1.16% | 0.0846 | 0.0182 | 0.1212 | 0.1140 |
+| July 2018 | 3.38% | 0.0869 | 0.0760 | 0.1103 | 0.0885 |
+
+The rule-only approach underperforms ordinary XGBoost in **all five** months on the primary ranking metric, as does the feature-augmented XGBoost. The observed prevalence is highly variable, and PR-AUC must be interpreted against the prevalence of each held-out month. A separate exploratory paired bootstrap (500 order-level resamples per month and comparison) reports within-month differences and uncertainty bands in the CSV; order-level intervals do **not** control for repeat customers, cross-month dependence, or multiple testing. No causal interpretation is warranted. The originally encouraging single-split rule result was not robust.
+
+**Consequence for the manuscript:** The existing rule formulation is a heuristic feature transform, *not* demonstrated knowledge-constrained reasoning. The central defensible finding is that naive business-rule augmentation may fail under temporal distribution shift; do not present this as an improved predictive method. Literature and methodological novelty review is still required before submission.
 
 ## Research integrity and next work
 
-This repository is **not submission-ready**. Do not claim a novel superior hybrid algorithm, causal effects, generality across countries, or peer-reviewed validation. Before journal submission: pre-register the subsequent study design, run repeated forward-chaining time splits, add bootstrap confidence intervals and operational decision-cost analysis, test assumptions/sensitivity, compare stronger knowledge-integration methods, and check related work and *Knowledge-Based Systems* Short Communication guidelines. The research manuscript and references are separate work products.
+This repository is **not submission-ready**. Do not claim a novel superior hybrid algorithm, causal effects, generality across countries, or peer-reviewed validation. Before journal submission: pre-register the subsequent study design, validate operational decision costs, test the assumed travel speed and parcel-mass thresholds, account for selection among delivered orders, examine stronger knowledge-integration methods, add external replication, and check related work and *Knowledge-Based Systems* Short Communication guidelines. The research manuscript and references are separate work products.
 
 ### Attribution
 
