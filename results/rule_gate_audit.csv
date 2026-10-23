@@ -1,0 +1,16 @@
+test_month,rule,calibration_firings,calibration_lates,calibration_nonlates,eligible_for_fitting,training_late_rate
+2018-03,tight_route_commitment,0,0,0,0,
+2018-03,multi_seller_coordination,16,0,16,0,0.0000000
+2018-03,heavy_package_flag,69,1,68,0,0.0144928
+2018-04,tight_route_commitment,0,0,0,0,
+2018-04,multi_seller_coordination,23,1,22,0,0.0434783
+2018-04,heavy_package_flag,97,5,92,1,0.0515464
+2018-05,tight_route_commitment,0,0,0,0,
+2018-05,multi_seller_coordination,42,0,42,0,0.0000000
+2018-05,heavy_package_flag,131,7,124,1,0.0534351
+2018-06,tight_route_commitment,0,0,0,0,
+2018-06,multi_seller_coordination,35,0,35,0,0.0000000
+2018-06,heavy_package_flag,109,1,108,0,0.0091743
+2018-07,tight_route_commitment,0,0,0,0,
+2018-07,multi_seller_coordination,53,0,53,0,0.0000000
+2018-07,heavy_package_flag,113,0,113,0,0.0000000
