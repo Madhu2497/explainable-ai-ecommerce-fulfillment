@@ -120,3 +120,18 @@ Run `python rule_reliability.py --data archive.zip --out results`. Supplementary
 
 **Observed March–July 2018 result:** the gate disabled rule overlays in 4/5 months; in its only accepted month (May), out-of-time Brier increased from 0.060425 to 0.061294. This is **not an improvement claim**. It strengthens the documented failure/robustness analysis; the proposal remains exploratory and is not ready for journal submission. Main-paper output remains restricted to two figures and two tables; added CSVs are supplementary.
 
+
+
+## Step 8: outcome-label maturity sensitivity (research-in-progress)
+
+This supplementary audit addresses **selective label availability** at monthly test cutoffs. In the previous-month calibration sample, only 47%–73% of eventually delivered orders have an observable delivery outcome by the next test start. The observed sample is biased toward rapidly completed deliveries; hindsight labels are used only for the retrospective audit, never for training or calibration.
+
+```bash
+python label_maturity_sensitivity.py --data archive.zip --out results
+```
+
+Outputs: `results/maturity_sensitivity.csv` (25 method-month combinations from five test months) and `results/outcome_maturity_audit.csv` (five cohort-maturity diagnostics). Comparisons within each test month share the same fitted XGBoost base predictor; that base training window is **different** from the original benchmark, so do not compare raw levels across the two experiments as if controlled.
+
+Three-month-lagged validation cohorts have 99.5%–99.9% observable outcomes, but can be temporally stale. Lagged global calibration lowered Brier error versus the same raw XGBoost in March and July 2018, was effectively unchanged in April, and worsened it in May and June. The nonnegative knowledge overlay did not show a consistent incremental benefit. These are exploratory historical backtests, **not proof of superior knowledge-based AI, causal effects, or journal readiness**. Five overlapping months should not be treated as independent replications.
+
+The full manuscript is a separate research-in-progress draft. This public repo excludes the original Olist transactions and any claims of journal submission or acceptance.
