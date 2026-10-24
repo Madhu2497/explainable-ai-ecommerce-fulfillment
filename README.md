@@ -1,5 +1,7 @@
 # Explainable Knowledge-Based AI for E-Commerce Fulfillment Delays
 
+> **DBA 802 Blackboard submission (24 October 2026):** [Manuscript text](submission/DBA802_manuscript_text.md) · [Two data-derived figures and submission guide](submission/BLACKBOARD_SUBMISSION_GUIDE.md) · [Figure 1](submission/Figure_1_Label_Maturity.svg) · [Figure 2](submission/Figure_2_Calibration_Sensitivity.svg). The complete PDF/Word and figure PNGs are in the separate Blackboard package supplied to the author, **not** uploaded as binary GitHub assets. This manuscript is **not journal-submitted or accepted**.
+
 DBA 802 research prototype | **real Olist transactions; preliminary results, not a submitted/accepted journal paper.**
 
 ## Research question
